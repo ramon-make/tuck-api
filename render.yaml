@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: tuck-api
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: API_KEY
+        generateValue: true
+      - key: SHEET_ID
+        value: 1FPkWfkWJPW0zf-tyoA_mjMVfXBcnSSy1WvFFJ7XZeQ4
+      - key: GID
+        value: "1088220793"
+      - key: CACHE_TTL
+        value: "60"
