@@ -12,5 +12,9 @@ services:
         value: 1FPkWfkWJPW0zf-tyoA_mjMVfXBcnSSy1WvFFJ7XZeQ4
       - key: GID
         value: "1088220793"
+      - key: PRICE_SHEET_ID
+        value: 13MFWsX1INiWyj5sLI2Af74Gj8nz27TITVzqBxt-qF0w
+      - key: PRICE_GID
+        value: ""
       - key: CACHE_TTL
         value: "60"

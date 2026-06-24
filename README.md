@@ -8,6 +8,7 @@ API simples que expõe em JSON o conteúdo da planilha de estoque do Google Shee
 |--------|------|------|-----------|
 | GET | `/health` | Não | Status e total de itens em cache |
 | GET | `/produtos` | Sim | Lista com filtros |
+| GET | `/precos` | Sim | Tabela de preços (planilha separada) |
 | GET | `/resumo` | Sim | Estoque agregado por produto |
 
 ### `/produtos` — query params
@@ -20,6 +21,39 @@ API simples que expõe em JSON o conteúdo da planilha de estoque do Google Shee
 | `com_estoque` | `true` | Apenas itens com estoque_num > 0 |
 | `limit` | `20` | Nº de itens por página |
 | `offset` | `40` | Deslocamento para paginação |
+
+### `/precos` — query params
+
+Lê uma **planilha separada** de preços (`Escola, Categoria, Produto, Tamanho, Preço`). É independente do estoque — não há código em comum entre as duas planilhas, por isso é uma rota dedicada.
+
+| Param | Exemplo | Descrição |
+|-------|---------|-----------|
+| `escola` | `CRIDEAL` | Filtra por escola (exato, case-insensitive) |
+| `categoria` | `CAMISETA` | Filtra por categoria (exato, case-insensitive) |
+| `tamanho` | `M` | Filtra por tamanho (exato, case-insensitive) |
+| `produto` | `BERMUDA CICLISTA` | Filtra por produto exato (case-insensitive) |
+| `q` | `bermuda` | Busca substring no nome do produto |
+| `limit` | `20` | Nº de itens por página |
+| `offset` | `40` | Deslocamento para paginação |
+
+### Exemplo de resposta `/precos?q=bermuda&limit=2`
+
+```json
+{
+  "total": 2735,
+  "count": 2,
+  "items": [
+    {
+      "escola": "CUNHA CARVALHO",
+      "categoria": "BERMUDA",
+      "produto": "BERMUDA CICLISTA",
+      "tamanho": "4",
+      "preco": "R$ 53,90",
+      "preco_num": 53.9
+    }
+  ]
+}
+```
 
 ### `/resumo` — query params
 
@@ -61,6 +95,7 @@ Teste:
 curl localhost:3000/health
 curl -H "x-api-key: teste" "localhost:3000/produtos?cod_produto=2"
 curl -H "x-api-key: teste" "localhost:3000/produtos?com_estoque=true&limit=5"
+curl -H "x-api-key: teste" "localhost:3000/precos?q=bermuda&limit=5"
 curl -H "x-api-key: teste" "localhost:3000/resumo?cod_produto=2"
 ```
 
