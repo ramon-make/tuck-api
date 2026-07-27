@@ -26,6 +26,8 @@ API simples que expõe em JSON o conteúdo da planilha de estoque do Google Shee
 
 Lê uma **planilha separada** de preços (`Escola, Categoria, Produto, Tamanho, Preço`). É independente do estoque — não há código em comum entre as duas planilhas, por isso é uma rota dedicada.
 
+Base atual: **3.085 linhas, 19 escolas** (tabelas de 21/07/2026).
+
 | Param | Exemplo | Descrição |
 |-------|---------|-----------|
 | `escola` | `CRIDEAL` | Filtra por escola (exato, case-insensitive) |
@@ -36,24 +38,44 @@ Lê uma **planilha separada** de preços (`Escola, Categoria, Produto, Tamanho, 
 | `limit` | `20` | Nº de itens por página |
 | `offset` | `40` | Deslocamento para paginação |
 
+**Escolas:** APPEZ, ATTIE, AUGUSTO DO AMARAL, BLOOM, COC, COLEGIO BLOOM, COMPANY, CRI CURUMIM, CRIDEAL, CUNHA CARVALHO, DOM HENRIQUE, EDUCATIVA, EMYGDIO, HELOISA, KIDDIES WORLD, MAJOR TELMO, PEQUENOS GIRASSÓIS, SA, VIDIGAL.
+
+**Categorias:** `AGASALHO`, `BERMUDA`, `CALÇA`, `CAMISETA`, `OUTROS`, `SAIA/SHORT`.
+
+**Tamanhos:** numéricos (`1`, `2`, `4`, `6`, `8`, `10`, `12`, `14`), letras (`PP`, `P`, `M`, `G`, `GG`, `EXG`) e compostos, que precisam ser passados por inteiro — `PP ADULTO`, `M INFANTIL`, `EXG ADULTO` etc. (na URL: `?tamanho=PP%20ADULTO`).
+
 ### Exemplo de resposta `/precos?q=bermuda&limit=2`
 
 ```json
 {
-  "total": 2735,
+  "total": 3085,
   "count": 2,
   "items": [
     {
       "escola": "CUNHA CARVALHO",
       "categoria": "BERMUDA",
       "produto": "BERMUDA CICLISTA",
-      "tamanho": "4",
-      "preco": "R$ 53,90",
-      "preco_num": 53.9
+      "tamanho": "6",
+      "preco": "R$ 55,90",
+      "preco_num": 55.9
     }
   ]
 }
 ```
+
+### Atualizar a base de preços
+
+A fonte de verdade são as tabelas em PDF de `docs/` (uma por escola). Quando chegarem PDFs novos:
+
+```bash
+node scripts/gerar-precos.js
+```
+
+O script extrai os PDFs, deriva a categoria pelo nome do produto, preserva as escolas que não têm PDF (ATTIE e EMYGDIO, lidas da própria planilha), grava `precos-atualizado.csv` e imprime um relatório de diferenças (itens novos, removidos e preços alterados).
+
+Depois é só importar na planilha: **Arquivo → Importar → Enviar `precos-atualizado.csv` → Substituir planilha atual**. Em até `CACHE_TTL` (60s) a API já serve os dados novos, sem redeploy.
+
+> **Requer o `pdftotext` do [poppler](https://poppler.freedesktop.org/)** (`winget install oschwartz10612.Poppler`). O `pdftotext` do Xpdf — que vem junto com o Git para Windows em `mingw64/bin` e costuma vir antes no `PATH` — aceita o mesmo `-layout` mas desalinha as colunas destes relatórios, associando preços aos tamanhos errados. Por isso o script valida o binário antes de usar e recusa qualquer um que não seja poppler. Para apontar um caminho específico: `PDFTOTEXT=/caminho/para/pdftotext node scripts/gerar-precos.js`.
 
 ### `/resumo` — query params
 

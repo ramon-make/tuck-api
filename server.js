@@ -27,10 +27,33 @@ function parsePtBrNumber(str) {
   return isNaN(num) ? 0 : num;
 }
 
+// Aceita os formatos que o Sheets pode exportar conforme a formatação da célula:
+// "$53,90", "R$ 53,90", "53,90", "1.234,56", "53.90", "1,234.56".
+// Não dá para assumir que o ponto é sempre milhar: se a coluna for reformatada
+// como número, "53.90" viraria 5390 silenciosamente.
 function parsePtBrPrice(str) {
+  if (typeof str === 'number') return str;
   if (!str || typeof str !== 'string') return 0;
-  const cleaned = str.replace(/[^\d.,-]/g, '').replace(/\./g, '').replace(',', '.');
-  const num = Number(cleaned);
+
+  let s = str.replace(/[^\d.,-]/g, '');
+  const virgula = s.lastIndexOf(',');
+  const ponto = s.lastIndexOf('.');
+
+  if (virgula > -1 && ponto > -1) {
+    // O separador que aparece por último é o decimal; o outro é de milhar.
+    const decimal = virgula > ponto ? ',' : '.';
+    const milhar = decimal === ',' ? '.' : ',';
+    s = s.split(milhar).join('').replace(decimal, '.');
+  } else if (virgula > -1) {
+    s = s.replace(/,/g, '.');
+  } else if (ponto > -1) {
+    // Ponto sozinho com exatamente 3 dígitos depois é milhar ("1.234");
+    // qualquer outro caso é decimal ("53.9", "53.90").
+    const partes = s.split('.');
+    if (partes.length === 2 && partes[1].length === 3) s = partes.join('');
+  }
+
+  const num = Number(s);
   return isNaN(num) ? 0 : num;
 }
 
@@ -39,7 +62,12 @@ function formatPrice(num) {
 }
 
 function normalize(str) {
-  return (str || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+  return (str || '')
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/[﻿​]/g, '') // BOM/zero-width: um BOM sobrevivente no CSV
+    .toLowerCase()                  // quebraria o indexOf do cabeçalho em silêncio
+    .trim();
 }
 
 async function fetchSheet() {
